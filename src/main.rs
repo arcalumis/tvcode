@@ -341,10 +341,14 @@ fn transcode_video(info: &VideoInfo, subtitle_track: Option<SubtitleTrack>) {
     if let Some(ref track) = subtitle_track {
         if track.is_bitmap {
             // Bitmap subtitles (PGS, DVD, DVB) - use filter_complex with overlay
+            // Scale subtitle to match video dimensions to avoid resolution mismatch
             println!("   🔥 Burning bitmap subtitles (PGS/DVD) using overlay filter");
             ffmpeg_args.extend([
                 "-filter_complex".to_string(),
-                format!("[0:v][0:s:{}]overlay", track.subtitle_index),
+                format!(
+                    "[0:s:{}]scale={}:{}[sub];[0:v][sub]overlay=eof_action=pass",
+                    track.subtitle_index, info.width, info.height
+                ),
             ]);
             // Software encoding required for filter_complex
             ffmpeg_args.extend(get_sw_encoding_args());
